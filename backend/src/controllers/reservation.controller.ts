@@ -101,3 +101,24 @@ export const processPayment = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Payment failed', error });
     }
 };
+
+export const getReservationById = async (req: any, res: Response) => {
+    try {
+        const reservation = await Reservation.findById(req.params.id)
+            .populate('user', 'name email')
+            .populate('flight');
+
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found' });
+        }
+
+        // Check if user owns this reservation or is admin
+        if (reservation.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        res.json({ success: true, reservation });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
